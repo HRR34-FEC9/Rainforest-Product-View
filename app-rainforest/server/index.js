@@ -9,6 +9,14 @@ const Sequelize = require('sequelize');
 const app = express();
 const port = 710;
 
+const environment = process.env.NODE_ENV || 'development';
+const configuration = require(__dirname + '/../../knexfile.js')[environment];
+const database = require('knex')(configuration);
+
+const models = require('./models/index');
+//application routes
+require('./routes/index')(app);
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -63,4 +71,73 @@ app.get('/products', (req, res) => {
     });
 });
 
+app.get('/cr/reviews', (req, res) => {
+  database('customer_review').select()
+    .then((reviews) => {
+      res.status(200).json(reviews);
+    })
+    .catch((error) => {
+      res.status(500).json({
+        error
+      });
+    });
+});
+
+app.get('/cr/reviews/:productid', (req, res) => {
+  let productid = req.params.productid;
+  database('customer_review').where({
+      product_id: productid
+    }).orderBy('helpful_count', 'desc').limit(10).select()
+    .then((reviews) => {
+      res.status(200).json(reviews);
+    })
+    .catch((error) => {
+      res.status(500).json({
+        error
+      });
+    });
+});
+
+
+app.get('/cr/images', (req, res) => {
+  database('customer_review_images').select()
+    .then((images) => {
+      res.status(200).json(images);
+    })
+    .catch((error) => {
+      res.status(500).json({
+        error
+      });
+    });
+});
+
+app.get('/cr/images/:reviewId', (req, res) => {
+  let reviewId = req.params.reviewId;
+  database('customer_review_images').where({
+      review_id: reviewId
+    }).limit(4).select()
+    .then((images) => {
+      res.status(200).json(images);
+    })
+    .catch((error) => {
+      res.status(500).json({
+        error
+      });
+    });
+});
+
+app.get('/cr/products', (req, res) => {
+  database('product_info').select()
+    .then((products) => {
+      res.status(200).json(products);
+    })
+    .catch((error) => {
+      res.status(500).json({
+        error
+      });
+    });
+});
+
 app.listen(port, () => console.log(`App listening on port ${port}!`));
+
+module.exports = app;
